@@ -1,0 +1,237 @@
+// =============================================================================
+// 04 — Create Update Policies
+// =============================================================================
+// Update policies automatically fan out rows from Netskope_Raw into the
+// typed tables based on the StreamType column.
+//
+// When a batch lands in Netskope_Raw, ADX fires each update policy's
+// query against the NEW rows only, and appends matching rows to the
+// target typed table.
+//
+// Each policy:
+//   Source:  Netskope_Raw
+//   Filter:  WHERE StreamType == "events_{type}" (or "alerts_{subtype}")
+//   Project: TimeGenerated, RawData  (StreamType is implicit in table name)
+//
+// Run AFTER 03_create_typed_tables_v2.kql
+// =============================================================================
+
+
+// ---------------------------------------------------------------------------
+// Helper functions (one per stream type)
+// These are referenced by the update policies below.
+// ---------------------------------------------------------------------------
+
+// --- Events ---
+
+.create-or-alter function NetskopeEventsPage_Transform() {
+    Netskope_Raw
+    | where StreamType == "events_page"
+    | project TimeGenerated, RawData
+}
+
+.create-or-alter function NetskopeEventsApplication_Transform() {
+    Netskope_Raw
+    | where StreamType == "events_application"
+    | project TimeGenerated, RawData
+}
+
+.create-or-alter function NetskopeEventsAudit_Transform() {
+    Netskope_Raw
+    | where StreamType == "events_audit"
+    | project TimeGenerated, RawData
+}
+
+.create-or-alter function NetskopeEventsInfrastructure_Transform() {
+    Netskope_Raw
+    | where StreamType == "events_infrastructure"
+    | project TimeGenerated, RawData
+}
+
+.create-or-alter function NetskopeEventsNetwork_Transform() {
+    Netskope_Raw
+    | where StreamType == "events_network"
+    | project TimeGenerated, RawData
+}
+
+.create-or-alter function NetskopeEventsConnection_Transform() {
+    Netskope_Raw
+    | where StreamType == "events_connection"
+    | project TimeGenerated, RawData
+}
+
+.create-or-alter function NetskopeEventsEndpoint_Transform() {
+    Netskope_Raw
+    | where StreamType == "events_endpoint"
+    | project TimeGenerated, RawData
+}
+
+.create-or-alter function NetskopeEventsIncident_Transform() {
+    Netskope_Raw
+    | where StreamType == "events_incident"
+    | project TimeGenerated, RawData
+}
+
+
+// --- Alerts ---
+
+.create-or-alter function NetskopeAlertsRemediation_Transform() {
+    Netskope_Raw
+    | where StreamType == "alerts_remediation"
+    | project TimeGenerated, RawData
+}
+
+.create-or-alter function NetskopeAlertsCompromisedCredential_Transform() {
+    Netskope_Raw
+    | where StreamType == "alerts_compromisedcredential"
+    | project TimeGenerated, RawData
+}
+
+.create-or-alter function NetskopeAlertsUba_Transform() {
+    Netskope_Raw
+    | where StreamType == "alerts_uba"
+    | project TimeGenerated, RawData
+}
+
+.create-or-alter function NetskopeAlertsSecurityAssessment_Transform() {
+    Netskope_Raw
+    | where StreamType == "alerts_securityassessment"
+    | project TimeGenerated, RawData
+}
+
+.create-or-alter function NetskopeAlertsQuarantine_Transform() {
+    Netskope_Raw
+    | where StreamType == "alerts_quarantine"
+    | project TimeGenerated, RawData
+}
+
+.create-or-alter function NetskopeAlertsPolicy_Transform() {
+    Netskope_Raw
+    | where StreamType == "alerts_policy"
+    | project TimeGenerated, RawData
+}
+
+.create-or-alter function NetskopeAlertsMalware_Transform() {
+    Netskope_Raw
+    | where StreamType == "alerts_malware"
+    | project TimeGenerated, RawData
+}
+
+.create-or-alter function NetskopeAlertsMalsite_Transform() {
+    Netskope_Raw
+    | where StreamType == "alerts_malsite"
+    | project TimeGenerated, RawData
+}
+
+.create-or-alter function NetskopeAlertsDlp_Transform() {
+    Netskope_Raw
+    | where StreamType == "alerts_dlp"
+    | project TimeGenerated, RawData
+}
+
+.create-or-alter function NetskopeAlertsCtep_Transform() {
+    Netskope_Raw
+    | where StreamType == "alerts_ctep"
+    | project TimeGenerated, RawData
+}
+
+.create-or-alter function NetskopeAlertsWatchlist_Transform() {
+    Netskope_Raw
+    | where StreamType == "alerts_watchlist"
+    | project TimeGenerated, RawData
+}
+
+.create-or-alter function NetskopeAlertsDevice_Transform() {
+    Netskope_Raw
+    | where StreamType == "alerts_device"
+    | project TimeGenerated, RawData
+}
+
+.create-or-alter function NetskopeAlertsContent_Transform() {
+    Netskope_Raw
+    | where StreamType == "alerts_content"
+    | project TimeGenerated, RawData
+}
+
+
+// ---------------------------------------------------------------------------
+// Update policies
+// IsEnabled: true    — policy is active
+// IsTransactional: false — don't roll back Netskope_Raw insert if typed insert fails
+//                          (we'd rather have data in Raw than lose it entirely)
+// PropagateIngestionProperties: true — carry ingestion tags through
+// ---------------------------------------------------------------------------
+
+// --- Events ---
+
+.alter table NetskopeEventsPage policy update
+@'[{"IsEnabled": true, "Source": "Netskope_Raw", "Query": "NetskopeEventsPage_Transform()", "IsTransactional": false, "PropagateIngestionProperties": true}]'
+
+.alter table NetskopeEventsApplication policy update
+@'[{"IsEnabled": true, "Source": "Netskope_Raw", "Query": "NetskopeEventsApplication_Transform()", "IsTransactional": false, "PropagateIngestionProperties": true}]'
+
+.alter table NetskopeEventsAudit policy update
+@'[{"IsEnabled": true, "Source": "Netskope_Raw", "Query": "NetskopeEventsAudit_Transform()", "IsTransactional": false, "PropagateIngestionProperties": true}]'
+
+.alter table NetskopeEventsInfrastructure policy update
+@'[{"IsEnabled": true, "Source": "Netskope_Raw", "Query": "NetskopeEventsInfrastructure_Transform()", "IsTransactional": false, "PropagateIngestionProperties": true}]'
+
+.alter table NetskopeEventsNetwork policy update
+@'[{"IsEnabled": true, "Source": "Netskope_Raw", "Query": "NetskopeEventsNetwork_Transform()", "IsTransactional": false, "PropagateIngestionProperties": true}]'
+
+.alter table NetskopeEventsConnection policy update
+@'[{"IsEnabled": true, "Source": "Netskope_Raw", "Query": "NetskopeEventsConnection_Transform()", "IsTransactional": false, "PropagateIngestionProperties": true}]'
+
+.alter table NetskopeEventsEndpoint policy update
+@'[{"IsEnabled": true, "Source": "Netskope_Raw", "Query": "NetskopeEventsEndpoint_Transform()", "IsTransactional": false, "PropagateIngestionProperties": true}]'
+
+.alter table NetskopeEventsIncident policy update
+@'[{"IsEnabled": true, "Source": "Netskope_Raw", "Query": "NetskopeEventsIncident_Transform()", "IsTransactional": false, "PropagateIngestionProperties": true}]'
+
+
+// --- Alerts ---
+
+.alter table NetskopeAlertsRemediation policy update
+@'[{"IsEnabled": true, "Source": "Netskope_Raw", "Query": "NetskopeAlertsRemediation_Transform()", "IsTransactional": false, "PropagateIngestionProperties": true}]'
+
+.alter table NetskopeAlertsCompromisedCredential policy update
+@'[{"IsEnabled": true, "Source": "Netskope_Raw", "Query": "NetskopeAlertsCompromisedCredential_Transform()", "IsTransactional": false, "PropagateIngestionProperties": true}]'
+
+.alter table NetskopeAlertsUba policy update
+@'[{"IsEnabled": true, "Source": "Netskope_Raw", "Query": "NetskopeAlertsUba_Transform()", "IsTransactional": false, "PropagateIngestionProperties": true}]'
+
+.alter table NetskopeAlertsSecurityAssessment policy update
+@'[{"IsEnabled": true, "Source": "Netskope_Raw", "Query": "NetskopeAlertsSecurityAssessment_Transform()", "IsTransactional": false, "PropagateIngestionProperties": true}]'
+
+.alter table NetskopeAlertsQuarantine policy update
+@'[{"IsEnabled": true, "Source": "Netskope_Raw", "Query": "NetskopeAlertsQuarantine_Transform()", "IsTransactional": false, "PropagateIngestionProperties": true}]'
+
+.alter table NetskopeAlertsPolicy policy update
+@'[{"IsEnabled": true, "Source": "Netskope_Raw", "Query": "NetskopeAlertsPolicy_Transform()", "IsTransactional": false, "PropagateIngestionProperties": true}]'
+
+.alter table NetskopeAlertsMalware policy update
+@'[{"IsEnabled": true, "Source": "Netskope_Raw", "Query": "NetskopeAlertsMalware_Transform()", "IsTransactional": false, "PropagateIngestionProperties": true}]'
+
+.alter table NetskopeAlertsMalsite policy update
+@'[{"IsEnabled": true, "Source": "Netskope_Raw", "Query": "NetskopeAlertsMalsite_Transform()", "IsTransactional": false, "PropagateIngestionProperties": true}]'
+
+.alter table NetskopeAlertsDlp policy update
+@'[{"IsEnabled": true, "Source": "Netskope_Raw", "Query": "NetskopeAlertsDlp_Transform()", "IsTransactional": false, "PropagateIngestionProperties": true}]'
+
+.alter table NetskopeAlertsCtep policy update
+@'[{"IsEnabled": true, "Source": "Netskope_Raw", "Query": "NetskopeAlertsCtep_Transform()", "IsTransactional": false, "PropagateIngestionProperties": true}]'
+
+.alter table NetskopeAlertsWatchlist policy update
+@'[{"IsEnabled": true, "Source": "Netskope_Raw", "Query": "NetskopeAlertsWatchlist_Transform()", "IsTransactional": false, "PropagateIngestionProperties": true}]'
+
+.alter table NetskopeAlertsDevice policy update
+@'[{"IsEnabled": true, "Source": "Netskope_Raw", "Query": "NetskopeAlertsDevice_Transform()", "IsTransactional": false, "PropagateIngestionProperties": true}]'
+
+.alter table NetskopeAlertsContent policy update
+@'[{"IsEnabled": true, "Source": "Netskope_Raw", "Query": "NetskopeAlertsContent_Transform()", "IsTransactional": false, "PropagateIngestionProperties": true}]'
+
+
+// ---------------------------------------------------------------------------
+// Verification: list all update policies to confirm they're active
+// ---------------------------------------------------------------------------
+// .show table * policy update
