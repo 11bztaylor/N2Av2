@@ -1,4 +1,5 @@
 {
+  "_DEPRECATED": "This ARM template is superseded by main.bicep. Use: az deployment group create --template-file main.bicep. This file is kept for reference only and will be removed in a future release.",
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
   "contentVersion": "2.0.0.0",
 

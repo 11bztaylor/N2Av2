@@ -1,21 +1,9 @@
 """
 Netskope REST API v2 dataexport iterator client.
 
-Uses the v2 dataexport iterator endpoints for streaming event/alert data.
-This replaces the original client which incorrectly used /api/v2/events/data/
-(the time-range query endpoint) with POST + JSON body.
-
 Endpoint structure (GET with query params):
   Events:  GET /api/v2/events/dataexport/events/{type}?operation=next&index={name}
   Alerts:  GET /api/v2/events/dataexport/alerts/{subtype}?operation=next&index={name}
-
-Valid event types:
-  page, application, audit, infrastructure, network, connection, endpoint, incident
-
-Valid alert subtypes:
-  remediation, compromisedcredential, uba, securityassessment,
-  quarantine, policy, malware, malsite, dlp, ctep,
-  watchlist, device, content
 
 Auth header:
   Netskope-Api-Token: {token}
@@ -30,14 +18,7 @@ Iterator lifecycle:
   auto-detects "iterator not found" responses and attempts creation.
 
 Response shape:
-  {
-    "ok": 1,
-    "result": "ok" | "wait",
-    "data": [...],
-    "wait_time": <seconds>
-  }
-  result "ok"   + data  -> batch returned, more may follow
-  result "wait"  / empty -> caught up, stop until next timer fire
+  { "ok": 1, "result": "ok"|"wait", "data": [...], "wait_time": <seconds> }
 """
 
 import logging
@@ -119,39 +100,35 @@ class NetskopeClient:
     # Public API
     # ------------------------------------------------------------------
 
-    def pull_events(self, event_type: str) -> Iterator[List[Dict[str, Any]]]:
+    def pull_stream(self, category: str, stream_type: str) -> Iterator[List[Dict[str, Any]]]:
         """
-        Yield batches of events for the given event type.
+        Yield batches for a given category ("events" or "alerts") and type.
 
-        Valid types: page, application, audit, infrastructure,
-                     network, connection, endpoint, incident.
+        Unified entry point that validates and routes to the correct endpoint.
         """
-        if event_type not in self.VALID_EVENT_TYPES:
+        paths = {"events": self.EVENTS_PATH, "alerts": self.ALERTS_PATH}
+        valid_types = {"events": self.VALID_EVENT_TYPES, "alerts": self.VALID_ALERT_SUBTYPES}
+
+        if category not in paths:
+            raise ValueError(f"Invalid category '{category}'. Must be 'events' or 'alerts'.")
+
+        if stream_type not in valid_types[category]:
             raise ValueError(
-                f"Invalid event type '{event_type}'. "
-                f"Must be one of: {sorted(self.VALID_EVENT_TYPES)}"
+                f"Invalid {category} type '{stream_type}'. "
+                f"Must be one of: {sorted(valid_types[category])}"
             )
-        url = f"{self.base_url}{self.EVENTS_PATH}/{event_type}"
-        index_name = f"{self.base_index}_events_{event_type}"
-        yield from self._poll_iterator(url, index_name, f"events/{event_type}")
+
+        url = f"{self.base_url}{paths[category]}/{stream_type}"
+        index_name = f"{self.base_index}_{category}_{stream_type}"
+        yield from self._poll_iterator(url, index_name, f"{category}/{stream_type}")
+
+    def pull_events(self, event_type: str) -> Iterator[List[Dict[str, Any]]]:
+        """Yield batches of events for the given event type."""
+        yield from self.pull_stream("events", event_type)
 
     def pull_alerts(self, alert_subtype: str) -> Iterator[List[Dict[str, Any]]]:
-        """
-        Yield batches of alerts for the given alert subtype.
-
-        Valid subtypes: remediation, compromisedcredential, uba,
-                        securityassessment, quarantine, policy,
-                        malware, malsite, dlp, ctep,
-                        watchlist, device, content.
-        """
-        if alert_subtype not in self.VALID_ALERT_SUBTYPES:
-            raise ValueError(
-                f"Invalid alert subtype '{alert_subtype}'. "
-                f"Must be one of: {sorted(self.VALID_ALERT_SUBTYPES)}"
-            )
-        url = f"{self.base_url}{self.ALERTS_PATH}/{alert_subtype}"
-        index_name = f"{self.base_index}_alerts_{alert_subtype}"
-        yield from self._poll_iterator(url, index_name, f"alerts/{alert_subtype}")
+        """Yield batches of alerts for the given alert subtype."""
+        yield from self.pull_stream("alerts", alert_subtype)
 
     def close(self) -> None:
         """Close the underlying HTTP session."""

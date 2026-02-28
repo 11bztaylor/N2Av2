@@ -1,0 +1,25 @@
+# Azure Functions
+local.settings.json
+.python_packages/
+__pycache__/
+*.pyc
+.venv/
+.funcignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+*.egg-info/
+dist/
+build/
+
+# Compiled ARM from Bicep (regenerate with: az bicep build --file main.bicep)
+main.json

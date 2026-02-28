@@ -12,6 +12,8 @@
     "ADX_CLUSTER_URI": "https://<YOUR_CLUSTER>.<REGION>.kusto.windows.net",
     "ADX_DATABASE": "<YOUR_DATABASE>",
 
+    "LOG_LEVEL": "INFO",
+
     "IngestEventsPage": "Yes",
     "IngestEventsApplication": "Yes",
     "IngestEventsAudit": "Yes",
