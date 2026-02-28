@@ -1,12 +1,5 @@
 """
-ADX Queued Ingestion client (v2).
-
-Changes from v1:
-  - Accepts ingestion_mapping_reference in ingest_batch()
-  - Required for Netskope_Raw to route fields correctly:
-      $.timestamp    -> TimeGenerated (datetime via DateTimeFromUnixSeconds)
-      $.stream_type  -> StreamType    (string)
-      $              -> RawData       (dynamic, full JSON object)
+ADX Queued Ingestion client.
 
 Uses the Function App's Managed Identity (System or User Assigned) to
 authenticate. No credentials stored in code or config.
@@ -20,13 +13,13 @@ Queued ingestion is the production-recommended path:
 Pre-requisite: the Managed Identity must have "Database Ingestor" role:
   .add database <db> ingestors ('aadapp=<principal-id>')
 
-The Principal ID is the "functionAppPrincipalId" output from ARM deployment.
+The Principal ID is the "functionAppPrincipalId" output from Bicep deployment.
 """
 
 import io
 import json
 import logging
-from typing import Optional
+from typing import Any, Dict, List, Optional
 
 from azure.identity import ManagedIdentityCredential
 from azure.kusto.data import KustoConnectionStringBuilder, DataFormat
@@ -71,7 +64,7 @@ class AdxClient:
     def ingest_batch(
         self,
         table: str,
-        records: list,
+        records: List[Dict[str, Any]],
         mapping_reference: Optional[str] = None,
     ) -> None:
         """
@@ -105,14 +98,17 @@ class AdxClient:
             ingestion_mapping_reference=mapping_reference,
         )
 
+        self._client.ingest_from_stream(buf, ingestion_properties=props)
+        logger.info(
+            "Queued for ingestion: table=%s records=%d mapping=%s",
+            table,
+            len(records),
+            mapping_reference or "(auto)",
+        )
+
+    def close(self) -> None:
+        """Close the underlying QueuedIngestClient and release connection pools."""
         try:
-            self._client.ingest_from_stream(buf, ingestion_properties=props)
-            logger.info(
-                "Queued for ingestion: table=%s records=%d mapping=%s",
-                table,
-                len(records),
-                mapping_reference or "(auto)",
-            )
-        except Exception as e:
-            logger.error("ADX ingest failed [table=%s]: %s", table, e)
-            raise
+            self._client.close()
+        except Exception:
+            pass
