@@ -61,6 +61,9 @@ param userAssignedIdentityResourceId string = ''
 @description('Principal (Object) ID of the User Assigned Managed Identity. Required when managedIdentityType is UserAssigned. Find in Portal: UAMI resource > Properties > Principal ID.')
 param userAssignedPrincipalId string = ''
 
+@description('Client (Application) ID of the User Assigned Managed Identity. Required when managedIdentityType is UserAssigned. Find in Portal: UAMI resource > Properties > Client ID. Used by the Python SDK to select the correct identity at runtime.')
+param userAssignedClientId string = ''
+
 // ─── Key Vault ──────────────────────────────────────────────────────────────
 
 @description('Secret management strategy for the Netskope API token. "none" = plaintext app setting (dev/test ONLY). "existing" = reference a secret already stored in your Key Vault. "create" = deploy a new Key Vault and store the token. RECOMMENDED: "existing" or "create" for production.')
@@ -354,6 +357,12 @@ resource functionApp 'Microsoft.Web/sites@2024-04-01' = {
         {
           name: 'NetskopeIndex'
           value: netskopeIndex
+        }
+
+        // --- Identity (empty = system-assigned, set = user-assigned) ---
+        {
+          name: 'MANAGED_IDENTITY_CLIENT_ID'
+          value: isUserAssigned ? userAssignedClientId : ''
         }
 
         // --- Logging ---
