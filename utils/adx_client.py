@@ -49,9 +49,9 @@ class AdxClient:
         # Derive the ingestion endpoint from the query endpoint
         ingest_uri = cluster_uri.replace("https://", "https://ingest-", 1)
 
-        credential = ManagedIdentityCredential()
+        self._credential = ManagedIdentityCredential()
         kcsb = KustoConnectionStringBuilder.with_azure_token_credential(
-            ingest_uri, credential
+            ingest_uri, self._credential
         )
         self._client = QueuedIngestClient(kcsb)
 
@@ -110,5 +110,10 @@ class AdxClient:
         """Close the underlying QueuedIngestClient and release connection pools."""
         try:
             self._client.close()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Failed to close ADX client: %s", e)
+        if hasattr(self._credential, "close"):
+            try:
+                self._credential.close()
+            except Exception as e:
+                logger.warning("Failed to close ADX credential: %s", e)

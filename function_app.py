@@ -82,6 +82,30 @@ STREAMS = [
 ]
 
 
+def _validate_config() -> None:
+    """
+    Validate required app settings at startup.
+
+    Raises RuntimeError with a clear message listing all missing keys
+    so the root cause is immediately visible in Application Insights.
+    """
+    required = [
+        "NetskopeHostname",
+        "NetskopeApiToken",
+        "ADX_CLUSTER_URI",
+        "ADX_DATABASE",
+    ]
+    missing = [key for key in required if not os.environ.get(key, "").strip()]
+    if missing:
+        logger.critical(
+            "Missing required app settings: %s — function cannot start.",
+            ", ".join(missing),
+        )
+        raise RuntimeError(
+            f"Missing required app settings: {', '.join(missing)}"
+        )
+
+
 def _is_enabled(setting: str) -> bool:
     """Check if an app setting toggle is set to 'Yes' (case-insensitive)."""
     return os.environ.get(setting, "No").strip().lower() == "yes"
@@ -104,6 +128,9 @@ def netskope_ingest(timer: func.TimerRequest) -> None:
             "Timer fired past due. Previous execution may have overrun the "
             "10-min Consumption plan limit. Consider Elastic Premium (EP1)."
         )
+
+    # --- Validate required config before doing anything ---
+    _validate_config()
 
     # --- Read config from app settings ---
     hostname = os.environ["NetskopeHostname"]
