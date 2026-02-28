@@ -22,8 +22,9 @@ Response shape:
 """
 
 import logging
+import json
 import time
-from typing import Any, Dict, Iterator, List, Optional, Set
+from typing import Any, Dict, Iterator, List, Set
 
 import requests
 from requests.adapters import HTTPAdapter
@@ -249,7 +250,7 @@ class NetskopeClient:
 
             try:
                 body = resp.json()
-            except ValueError:
+            except json.JSONDecodeError:
                 logger.error(
                     "Netskope returned non-JSON [stream=%s]: %s",
                     stream_label,
