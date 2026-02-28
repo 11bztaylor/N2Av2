@@ -73,6 +73,25 @@ Auth:    Netskope-Api-Token: {token}
 | IngestEvents{Type} | Yes / No | Per stream |
 | IngestAlerts{Subtype} | Yes / No | Per stream |
 
+## Environment Quirks
+- `az` CLI not on bash PATH. Use: `powershell.exe -Command "& 'C:\Program Files\Microsoft SDKs\Azure\CLI2\wbin\az.cmd' <args>"`
+- `python` / `py` not on bash PATH. Use `python3` instead.
+- Bicep validation: `powershell.exe -Command "& 'C:\Program Files\Microsoft SDKs\Azure\CLI2\wbin\az.cmd' bicep build --file main.bicep"`
+
+## Git
+- Repo root is N2Av2/ (not the parent NetskopetoADX/ directory)
+- Remote: https://github.com/11bztaylor/N2Av2.git
+- Main branch: `main`
+
+## Completed Decisions
+- ARM template deprecated in favor of Bicep (main.bicep)
+- _v2 suffixes removed from all Python files and requirements.txt
+- Key Vault integration: 3 modes (none/existing/create), default is 'create'
+- logging.basicConfig() is a no-op in Azure Functions — use logger.setLevel() directly
+- AZURE_LOG_LEVEL controls Kusto SDK verbosity (wired to detailedKustoLogging Bicep param)
+- Unified STREAMS registry replaces separate EVENT_STREAMS + ALERT_SUBTYPES lists
+- pull_stream() is the unified entry point; pull_events/pull_alerts are thin wrappers
+
 ## Gotchas
 - The Netskope iterator is **server-side stateful**. If you delete and recreate with the same name, you may miss data or get duplicates.
 - `dlp` is an **alert subtype**, NOT an event type.
