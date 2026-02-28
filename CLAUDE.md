@@ -78,11 +78,22 @@ Auth:    Netskope-Api-Token: {token}
 - `az` CLI not on bash PATH. Use: `powershell.exe -Command "& 'C:\Program Files\Microsoft SDKs\Azure\CLI2\wbin\az.cmd' <args>"`
 - `python` / `py` not on bash PATH. Use `python3` instead.
 - Bicep validation: `powershell.exe -Command "& 'C:\Program Files\Microsoft SDKs\Azure\CLI2\wbin\az.cmd' bicep build --file main.bicep"`
+- `gh` CLI installed at `/c/Program Files/GitHub CLI/gh.exe` but NOT authenticated (token lacks `read:org` scope). Fallback: use git credentials for GitHub API:
+  `TOKEN=$(echo "url=https://github.com" | git credential fill 2>/dev/null | grep password | cut -d= -f2)`
+  Then: `curl -s -H "Authorization: token $TOKEN" "https://api.github.com/repos/11bztaylor/N2Av2/..."`
+- Repo is **private** — unauthenticated GitHub API calls return 404, not 403
 
 ## Git
 - Repo root is N2Av2/ (not the parent NetskopetoADX/ directory)
 - Remote: https://github.com/11bztaylor/N2Av2.git
 - Main branch: `main`
+- Make atomic, meaningful commits as you do work
+- Use plain `git` for commits/push/pull/branch/merge — it works with stored credentials
+- Use the GitHub API fallback (see Environment Quirks) for issues, PRs, merges
+
+## Custom Commands
+- `/github` — GitHub API operations via git credentials (global, works across repos)
+- `/review` — Source-validated code review against official SDK/API docs (project-level)
 
 ## Completed Decisions
 - ARM template deprecated in favor of Bicep (main.bicep)
@@ -92,6 +103,10 @@ Auth:    Netskope-Api-Token: {token}
 - AZURE_LOG_LEVEL controls Kusto SDK verbosity (wired to detailedKustoLogging Bicep param)
 - Unified STREAMS registry replaces separate EVENT_STREAMS + ALERT_SUBTYPES lists
 - pull_stream() is the unified entry point; pull_events/pull_alerts are thin wrappers
+- User-assigned managed identity wired end-to-end: Bicep → MANAGED_IDENTITY_CLIENT_ID → AdxClient → ManagedIdentityCredential(client_id=...)
+- _validate_config() runs every timer tick (not just cold start) — validates required app settings
+- DataFormat.MULTIJSON used for JSON-lines ingestion (works, but DataFormat.JSON is more precise — left as-is)
+- ManagedIdentityCredential.close() exists — stored as self._credential and closed in AdxClient.close()
 
 ## Gotchas
 - The Netskope iterator is **server-side stateful**. If you delete and recreate with the same name, you may miss data or get duplicates.
