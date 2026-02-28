@@ -138,9 +138,10 @@ def netskope_ingest(timer: func.TimerRequest) -> None:
     index    = os.environ.get("NetskopeIndex", "").strip() or "NetskopeADX"
     adx_uri  = os.environ["ADX_CLUSTER_URI"]
     adx_db   = os.environ["ADX_DATABASE"]
+    mi_client_id = os.environ.get("MANAGED_IDENTITY_CLIENT_ID", "").strip() or None
 
     ns  = NetskopeClient(hostname, token, index)
-    adx = AdxClient(adx_uri, adx_db)
+    adx = AdxClient(adx_uri, adx_db, managed_identity_client_id=mi_client_id)
 
     # Log which streams are active for this run
     enabled = [

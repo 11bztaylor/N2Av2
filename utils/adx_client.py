@@ -35,11 +35,13 @@ logger = logging.getLogger(__name__)
 class AdxClient:
     """Wraps ADX queued ingestion for a single database."""
 
-    def __init__(self, cluster_uri: str, database: str) -> None:
+    def __init__(self, cluster_uri: str, database: str, managed_identity_client_id: Optional[str] = None) -> None:
         """
         Args:
-            cluster_uri: Query endpoint, e.g. https://<cluster>.<region>.kusto.windows.net
-            database:    Target ADX database name.
+            cluster_uri:                Query endpoint, e.g. https://<cluster>.<region>.kusto.windows.net
+            database:                   Target ADX database name.
+            managed_identity_client_id: Client ID of a User Assigned Managed Identity.
+                                        When None or empty, uses the system-assigned identity.
 
         The ingest URI is derived automatically:
           https://ingest-<cluster>.<region>.kusto.windows.net
@@ -49,7 +51,12 @@ class AdxClient:
         # Derive the ingestion endpoint from the query endpoint
         ingest_uri = cluster_uri.replace("https://", "https://ingest-", 1)
 
-        self._credential = ManagedIdentityCredential()
+        # Use user-assigned identity when a client ID is provided, otherwise system-assigned
+        credential_kwargs = {}
+        if managed_identity_client_id:
+            credential_kwargs["client_id"] = managed_identity_client_id
+            logger.info("Using user-assigned managed identity: %s", managed_identity_client_id)
+        self._credential = ManagedIdentityCredential(**credential_kwargs)
         kcsb = KustoConnectionStringBuilder.with_azure_token_credential(
             ingest_uri, self._credential
         )

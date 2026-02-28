@@ -70,6 +70,7 @@ Auth:    Netskope-Api-Token: {token}
 | ADX_DATABASE | NetskopeDB | Yes |
 | LOG_LEVEL | INFO | No (defaults to INFO) |
 | AZURE_LOG_LEVEL | WARNING | No (defaults to WARNING, set to INFO for Kusto SDK debug) |
+| MANAGED_IDENTITY_CLIENT_ID | (UAMI client ID) | No (empty = system-assigned, set for user-assigned) |
 | IngestEvents{Type} | Yes / No | Per stream |
 | IngestAlerts{Subtype} | Yes / No | Per stream |
 
