@@ -29,9 +29,8 @@ import logging
 from typing import Optional
 
 from azure.identity import ManagedIdentityCredential
-from azure.kusto.data import KustoConnectionStringBuilder
+from azure.kusto.data import KustoConnectionStringBuilder, DataFormat
 from azure.kusto.ingest import (
-    DataFormat,
     IngestionProperties,
     QueuedIngestClient,
     ReportLevel,
