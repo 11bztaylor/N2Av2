@@ -15,7 +15,8 @@
               "location": {
                 "resourceTypes": [
                   "microsoft.resources/resourcegroups"
-                ]
+                ],
+                "defaultValue": "westus2"
               }
             },
             {
