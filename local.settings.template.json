@@ -1,0 +1,40 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "python",
+    "FUNCTIONS_EXTENSION_VERSION": "~4",
+
+    "NetskopeHostname": "<YOUR_TENANT>.goskope.com",
+    "NetskopeApiToken": "<YOUR_V2_API_TOKEN>",
+    "NetskopeIndex": "NetskopeADX",
+
+    "ADX_CLUSTER_URI": "https://<YOUR_CLUSTER>.<REGION>.kusto.windows.net",
+    "ADX_DATABASE": "<YOUR_DATABASE>",
+
+    "LOG_LEVEL": "INFO",
+
+    "IngestEventsPage": "Yes",
+    "IngestEventsApplication": "Yes",
+    "IngestEventsAudit": "Yes",
+    "IngestEventsInfrastructure": "No",
+    "IngestEventsNetwork": "No",
+    "IngestEventsConnection": "No",
+    "IngestEventsEndpoint": "No",
+    "IngestEventsIncident": "No",
+
+    "IngestAlertsRemediation": "No",
+    "IngestAlertsCompromisedCredential": "No",
+    "IngestAlertsUba": "No",
+    "IngestAlertsSecurityAssessment": "No",
+    "IngestAlertsQuarantine": "No",
+    "IngestAlertsPolicy": "Yes",
+    "IngestAlertsMalware": "Yes",
+    "IngestAlertsMalsite": "Yes",
+    "IngestAlertsDlp": "Yes",
+    "IngestAlertsCtep": "No",
+    "IngestAlertsWatchlist": "No",
+    "IngestAlertsDevice": "No",
+    "IngestAlertsContent": "No"
+  }
+}

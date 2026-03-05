@@ -24,14 +24,10 @@ build/
 # Compiled ARM from Bicep (regenerate with: az bicep build --file main.bicep)
 main.json
 
-# Infrastructure / deployment (kept locally, not needed for Function App)
+# Claude Code (local-only tooling)
 .claude/
 CLAUDE.md
-README.md
-adx/
-main.bicep
-main.arm.json
+
+# Superseded / old templates
 azuredeploy_v2.json
 createUiDefinition.json
-uiFormDefinition.json
-local.settings.template.json

@@ -1,0 +1,36 @@
+// =============================================================================
+// 01 — Netskope_Raw: Create Staging Table
+// =============================================================================
+// All Netskope event and alert streams land here first.
+// Update policies on typed tables fan out from this table (see 04).
+//
+// Run order: 01 -> 02 -> 03 -> 04
+// Run this BEFORE deploying the Function App.
+// =============================================================================
+
+.create-merge table Netskope_Raw (
+    TimeGenerated: datetime,   // Derived from $.timestamp (unix epoch) via ingestion mapping
+    StreamType:    string,     // Injected by Function App:
+                               //   events_page, events_application, events_audit,
+                               //   events_infrastructure, events_network,
+                               //   events_connection, events_endpoint, events_incident,
+                               //   alerts_remediation, alerts_compromisedcredential,
+                               //   alerts_uba, alerts_securityassessment,
+                               //   alerts_quarantine, alerts_policy, alerts_malware,
+                               //   alerts_malsite, alerts_dlp, alerts_ctep,
+                               //   alerts_watchlist, alerts_device, alerts_content
+    RawData:       dynamic     // Full Netskope API payload — nothing dropped
+)
+
+// Folder organisation in the ADX web UI.
+.alter table Netskope_Raw folder "Netskope/Raw"
+
+// Retention: 90 days for staging. Typed tables hold canonical data.
+// Adjust to your storage budget. Can be shorter if you trust update policies.
+.alter-merge table Netskope_Raw policy retention
+```
+{
+  "SoftDeletePeriod": "90.00:00:00",
+  "Recoverability": "Enabled"
+}
+```
