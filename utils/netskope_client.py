@@ -157,6 +157,12 @@ class NetskopeClient:
 
         pages = 0
 
+        # DEBUG: Log the exact request details on the first call
+        logger.warning(
+            "DEBUG Netskope request: stream=%s url=%s index=%s token_last4=...%s",
+            stream_label, url, index_name, self.token[-4:] if self.token else "NONE",
+        )
+
         while pages < MAX_PAGES_PER_RUN:
             try:
                 resp = self._session.get(
@@ -194,6 +200,14 @@ class NetskopeClient:
             result = body.get("result", "wait")
             data: List[Dict[str, Any]] = body.get("data", [])
             wait_time = body.get("wait_time", 0)
+
+            # DEBUG: Log the full response summary for visibility
+            logger.warning(
+                "DEBUG Netskope response: stream=%s status=%d result=%s "
+                "data_count=%d wait_time=%s ok=%s",
+                stream_label, resp.status_code, result,
+                len(data), wait_time, body.get("ok"),
+            )
 
             if data:
                 logger.info(
