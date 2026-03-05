@@ -97,26 +97,43 @@
           "label": "ADX Configuration",
           "elements": [
             {
-              "name": "adxClusterUri",
-              "type": "Microsoft.Common.TextBox",
-              "label": "ADX Cluster URI",
-              "toolTip": "Query endpoint of your ADX cluster.",
-              "placeholder": "https://mycluster.eastus.kusto.windows.net",
-              "constraints": {
-                "required": true,
-                "regex": "^https://.+\\.kusto\\.windows\\.net/?$",
-                "validationMessage": "Must be a valid ADX cluster URI starting with https:// and ending with .kusto.windows.net"
+              "name": "adxClusterSelector",
+              "type": "Microsoft.Solutions.ResourceSelector",
+              "label": "ADX Cluster",
+              "toolTip": "Select your Azure Data Explorer cluster.",
+              "resourceType": "Microsoft.Kusto/clusters",
+              "options": {
+                "filter": {
+                  "subscription": "onBasics"
+                }
+              }
+            },
+            {
+              "name": "adxClusterDetailsApi",
+              "type": "Microsoft.Solutions.ArmApiControl",
+              "request": {
+                "method": "GET",
+                "path": "[concat(steps('adxConfig').adxClusterSelector.id, '?api-version=2023-08-15')]"
+              }
+            },
+            {
+              "name": "adxDatabasesApi",
+              "type": "Microsoft.Solutions.ArmApiControl",
+              "request": {
+                "method": "GET",
+                "path": "[concat(steps('adxConfig').adxClusterSelector.id, '/databases?api-version=2023-08-15')]"
               }
             },
             {
               "name": "adxDatabaseName",
-              "type": "Microsoft.Common.TextBox",
-              "label": "ADX Database Name",
-              "toolTip": "Target database for Netskope data ingestion.",
-              "placeholder": "NetskopeDB",
+              "type": "Microsoft.Common.DropDown",
+              "label": "ADX Database",
+              "toolTip": "Select the target database for Netskope data ingestion. Pick a cluster above first.",
               "constraints": {
-                "required": true
-              }
+                "required": true,
+                "allowedValues": "[map(steps('adxConfig').adxDatabasesApi.value, (db) => parse(concat('{\"label\":\"', last(split(db.name, '/')), '\",\"value\":\"', last(split(db.name, '/')), '\"}')))]"
+              },
+              "visible": true
             }
           ]
         },
@@ -139,94 +156,96 @@
               }
             },
             {
-              "name": "userAssignedIdentityResourceId",
-              "type": "Microsoft.Common.TextBox",
-              "label": "User Assigned Identity Resource ID",
-              "toolTip": "Full resource ID. Required only for UserAssigned.",
-              "defaultValue": "",
+              "name": "uamiSelector",
+              "type": "Microsoft.Solutions.ResourceSelector",
+              "label": "User Assigned Managed Identity",
+              "toolTip": "Select the User Assigned Managed Identity. Resource ID, Principal ID, and Client ID are read automatically.",
+              "resourceType": "Microsoft.ManagedIdentity/userAssignedIdentities",
               "visible": "[equals(steps('identitySecurity').managedIdentityType, 'UserAssigned')]",
-              "constraints": {
-                "required": "[equals(steps('identitySecurity').managedIdentityType, 'UserAssigned')]"
-              }
-            },
-            {
-              "name": "userAssignedPrincipalId",
-              "type": "Microsoft.Common.TextBox",
-              "label": "User Assigned Principal (Object) ID",
-              "toolTip": "Find in Portal: UAMI resource > Properties > Principal ID.",
-              "defaultValue": "",
-              "visible": "[equals(steps('identitySecurity').managedIdentityType, 'UserAssigned')]",
-              "constraints": {
-                "required": "[equals(steps('identitySecurity').managedIdentityType, 'UserAssigned')]"
-              }
-            },
-            {
-              "name": "userAssignedClientId",
-              "type": "Microsoft.Common.TextBox",
-              "label": "User Assigned Client (Application) ID",
-              "toolTip": "Find in Portal: UAMI resource > Properties > Client ID.",
-              "defaultValue": "",
-              "visible": "[equals(steps('identitySecurity').managedIdentityType, 'UserAssigned')]",
-              "constraints": {
-                "required": "[equals(steps('identitySecurity').managedIdentityType, 'UserAssigned')]"
-              }
-            },
-            {
-              "name": "keyVaultSection",
-              "type": "Microsoft.Common.Section",
-              "label": "Key Vault",
-              "elements": [
-                {
-                  "name": "keyVaultOption",
-                  "type": "Microsoft.Common.DropDown",
-                  "label": "API Token Storage",
-                  "toolTip": "How to store the Netskope API token. 'create' deploys a new Key Vault. 'existing' references your own. 'none' stores as plaintext (dev/test only).",
-                  "defaultValue": "Create new Key Vault",
-                  "constraints": {
-                    "required": true,
-                    "allowedValues": [
-                      { "label": "Create new Key Vault", "value": "create" },
-                      { "label": "Use existing Key Vault", "value": "existing" },
-                      { "label": "None (plaintext - dev/test only)", "value": "none" }
-                    ]
-                  }
-                },
-                {
-                  "name": "keyVaultName",
-                  "type": "Microsoft.Common.TextBox",
-                  "label": "Key Vault Name",
-                  "toolTip": "Globally unique, 3-24 characters.",
-                  "defaultValue": "",
-                  "visible": "[not(equals(steps('identitySecurity').keyVaultSection.keyVaultOption, 'none'))]",
-                  "constraints": {
-                    "required": "[not(equals(steps('identitySecurity').keyVaultSection.keyVaultOption, 'none'))]",
-                    "regex": "^[a-zA-Z][a-zA-Z0-9-]{1,22}[a-zA-Z0-9]$",
-                    "validationMessage": "3-24 characters. Start with letter, end with letter/number. Letters, numbers, hyphens only."
-                  }
-                },
-                {
-                  "name": "keyVaultSecretName",
-                  "type": "Microsoft.Common.TextBox",
-                  "label": "Secret Name",
-                  "toolTip": "Name of the secret in Key Vault.",
-                  "defaultValue": "NetskopeApiToken",
-                  "visible": "[not(equals(steps('identitySecurity').keyVaultSection.keyVaultOption, 'none'))]"
-                },
-                {
-                  "name": "keyVaultSku",
-                  "type": "Microsoft.Common.DropDown",
-                  "label": "Key Vault SKU",
-                  "toolTip": "Standard is sufficient. Premium adds HSM-backed keys (not needed).",
-                  "defaultValue": "standard",
-                  "visible": "[equals(steps('identitySecurity').keyVaultSection.keyVaultOption, 'create')]",
-                  "constraints": {
-                    "allowedValues": [
-                      { "label": "standard", "value": "standard" },
-                      { "label": "premium", "value": "premium" }
-                    ]
-                  }
+              "options": {
+                "filter": {
+                  "subscription": "onBasics"
                 }
-              ]
+              }
+            },
+            {
+              "name": "uamiDetailsApi",
+              "type": "Microsoft.Solutions.ArmApiControl",
+              "request": {
+                "method": "GET",
+                "path": "[concat(steps('identitySecurity').uamiSelector.id, '?api-version=2023-01-31')]"
+              }
+            },
+            {
+              "name": "keyVaultInfo",
+              "type": "Microsoft.Common.InfoBox",
+              "options": {
+                "text": "Configure how the Netskope API token is stored. Creating a new Key Vault is recommended for production.",
+                "style": "Info"
+              }
+            },
+            {
+              "name": "keyVaultOption",
+              "type": "Microsoft.Common.DropDown",
+              "label": "API Token Storage",
+              "toolTip": "How to store the Netskope API token. 'Create' deploys a new Key Vault. 'Existing' references your own. 'None' stores as plaintext (dev/test only).",
+              "defaultValue": "Create new Key Vault",
+              "constraints": {
+                "required": true,
+                "allowedValues": [
+                  { "label": "Create new Key Vault", "value": "create" },
+                  { "label": "Use existing Key Vault", "value": "existing" },
+                  { "label": "None (plaintext - dev/test only)", "value": "none" }
+                ]
+              }
+            },
+            {
+              "name": "existingKeyVaultSelector",
+              "type": "Microsoft.Solutions.ResourceSelector",
+              "label": "Select Key Vault",
+              "toolTip": "Choose an existing Key Vault from your subscription.",
+              "resourceType": "Microsoft.KeyVault/vaults",
+              "visible": "[equals(steps('identitySecurity').keyVaultOption, 'existing')]",
+              "options": {
+                "filter": {
+                  "subscription": "onBasics"
+                }
+              }
+            },
+            {
+              "name": "newKeyVaultName",
+              "type": "Microsoft.Common.TextBox",
+              "label": "New Key Vault Name",
+              "toolTip": "Globally unique, 3-24 characters.",
+              "defaultValue": "",
+              "visible": "[equals(steps('identitySecurity').keyVaultOption, 'create')]",
+              "constraints": {
+                "required": "[equals(steps('identitySecurity').keyVaultOption, 'create')]",
+                "regex": "^[a-zA-Z][a-zA-Z0-9-]{1,22}[a-zA-Z0-9]$",
+                "validationMessage": "3-24 characters. Start with letter, end with letter/number. Letters, numbers, hyphens only."
+              }
+            },
+            {
+              "name": "keyVaultSecretName",
+              "type": "Microsoft.Common.TextBox",
+              "label": "Secret Name",
+              "toolTip": "Name of the secret in Key Vault.",
+              "defaultValue": "NetskopeApiToken",
+              "visible": "[not(equals(steps('identitySecurity').keyVaultOption, 'none'))]"
+            },
+            {
+              "name": "keyVaultSku",
+              "type": "Microsoft.Common.DropDown",
+              "label": "Key Vault SKU",
+              "toolTip": "Standard is sufficient. Premium adds HSM-backed keys (not needed).",
+              "defaultValue": "standard",
+              "visible": "[equals(steps('identitySecurity').keyVaultOption, 'create')]",
+              "constraints": {
+                "allowedValues": [
+                  { "label": "standard", "value": "standard" },
+                  { "label": "premium", "value": "premium" }
+                ]
+              }
             }
           ]
         },
@@ -248,13 +267,7 @@
               "label": "Page Events",
               "toolTip": "Web page access events. Typically highest volume.",
               "defaultValue": "Yes",
-              "constraints": {
-                "required": true,
-                "allowedValues": [
-                  { "label": "Yes", "value": "Yes" },
-                  { "label": "No", "value": "No" }
-                ]
-              }
+              "constraints": { "required": true, "allowedValues": [{ "label": "Yes", "value": "Yes" }, { "label": "No", "value": "No" }] }
             },
             {
               "name": "ingestEventsApplication",
@@ -262,13 +275,7 @@
               "label": "Application Events",
               "toolTip": "Cloud app activity events (SaaS security, shadow IT).",
               "defaultValue": "Yes",
-              "constraints": {
-                "required": true,
-                "allowedValues": [
-                  { "label": "Yes", "value": "Yes" },
-                  { "label": "No", "value": "No" }
-                ]
-              }
+              "constraints": { "required": true, "allowedValues": [{ "label": "Yes", "value": "Yes" }, { "label": "No", "value": "No" }] }
             },
             {
               "name": "ingestEventsAudit",
@@ -276,13 +283,7 @@
               "label": "Audit Events",
               "toolTip": "Admin audit trail for compliance and change tracking.",
               "defaultValue": "Yes",
-              "constraints": {
-                "required": true,
-                "allowedValues": [
-                  { "label": "Yes", "value": "Yes" },
-                  { "label": "No", "value": "No" }
-                ]
-              }
+              "constraints": { "required": true, "allowedValues": [{ "label": "Yes", "value": "Yes" }, { "label": "No", "value": "No" }] }
             },
             {
               "name": "ingestEventsInfrastructure",
@@ -290,13 +291,7 @@
               "label": "Infrastructure Events",
               "toolTip": "CASB/SWG platform-level diagnostics.",
               "defaultValue": "Yes",
-              "constraints": {
-                "required": true,
-                "allowedValues": [
-                  { "label": "Yes", "value": "Yes" },
-                  { "label": "No", "value": "No" }
-                ]
-              }
+              "constraints": { "required": true, "allowedValues": [{ "label": "Yes", "value": "Yes" }, { "label": "No", "value": "No" }] }
             },
             {
               "name": "ingestEventsNetwork",
@@ -304,13 +299,7 @@
               "label": "Network Events",
               "toolTip": "Firewall and IPS events (Netskope Intelligent SSE).",
               "defaultValue": "Yes",
-              "constraints": {
-                "required": true,
-                "allowedValues": [
-                  { "label": "Yes", "value": "Yes" },
-                  { "label": "No", "value": "No" }
-                ]
-              }
+              "constraints": { "required": true, "allowedValues": [{ "label": "Yes", "value": "Yes" }, { "label": "No", "value": "No" }] }
             },
             {
               "name": "ingestEventsConnection",
@@ -318,13 +307,7 @@
               "label": "Connection Events",
               "toolTip": "Tunnel and ZTNA connection events.",
               "defaultValue": "Yes",
-              "constraints": {
-                "required": true,
-                "allowedValues": [
-                  { "label": "Yes", "value": "Yes" },
-                  { "label": "No", "value": "No" }
-                ]
-              }
+              "constraints": { "required": true, "allowedValues": [{ "label": "Yes", "value": "Yes" }, { "label": "No", "value": "No" }] }
             },
             {
               "name": "ingestEventsEndpoint",
@@ -332,13 +315,7 @@
               "label": "Endpoint Events",
               "toolTip": "NPA client and device posture events.",
               "defaultValue": "Yes",
-              "constraints": {
-                "required": true,
-                "allowedValues": [
-                  { "label": "Yes", "value": "Yes" },
-                  { "label": "No", "value": "No" }
-                ]
-              }
+              "constraints": { "required": true, "allowedValues": [{ "label": "Yes", "value": "Yes" }, { "label": "No", "value": "No" }] }
             },
             {
               "name": "ingestEventsIncident",
@@ -346,13 +323,7 @@
               "label": "Incident Events",
               "toolTip": "Security incident events. May not be available on all licenses.",
               "defaultValue": "Yes",
-              "constraints": {
-                "required": true,
-                "allowedValues": [
-                  { "label": "Yes", "value": "Yes" },
-                  { "label": "No", "value": "No" }
-                ]
-              }
+              "constraints": { "required": true, "allowedValues": [{ "label": "Yes", "value": "Yes" }, { "label": "No", "value": "No" }] }
             }
           ]
         },
@@ -483,7 +454,7 @@
               "type": "Microsoft.Common.DropDown",
               "label": "Python Version",
               "toolTip": "3.12 recommended for performance and security patches.",
-              "defaultValue": "3.12",
+              "defaultValue": "3.12 (Recommended)",
               "constraints": {
                 "required": true,
                 "allowedValues": [
@@ -498,7 +469,7 @@
               "type": "Microsoft.Common.DropDown",
               "label": "Log Level",
               "toolTip": "Application log verbosity.",
-              "defaultValue": "INFO",
+              "defaultValue": "INFO (recommended)",
               "constraints": {
                 "required": true,
                 "allowedValues": [
@@ -514,7 +485,7 @@
               "type": "Microsoft.Common.DropDown",
               "label": "Detailed Kusto SDK Logging",
               "toolTip": "Enable verbose ADX connection and ingestion logs for troubleshooting.",
-              "defaultValue": "No",
+              "defaultValue": "No (recommended)",
               "constraints": {
                 "required": true,
                 "allowedValues": [
@@ -538,17 +509,17 @@
         "netskopeApiToken": "[steps('netskopeConfig').netskopeApiToken]",
         "netskopeIndex": "[steps('netskopeConfig').netskopeIndex]",
 
-        "adxClusterUri": "[steps('adxConfig').adxClusterUri]",
+        "adxClusterUri": "[steps('adxConfig').adxClusterDetailsApi.properties.uri]",
         "adxDatabaseName": "[steps('adxConfig').adxDatabaseName]",
 
         "managedIdentityType": "[steps('identitySecurity').managedIdentityType]",
-        "userAssignedIdentityResourceId": "[steps('identitySecurity').userAssignedIdentityResourceId]",
-        "userAssignedPrincipalId": "[steps('identitySecurity').userAssignedPrincipalId]",
-        "userAssignedClientId": "[steps('identitySecurity').userAssignedClientId]",
-        "keyVaultOption": "[steps('identitySecurity').keyVaultSection.keyVaultOption]",
-        "keyVaultName": "[steps('identitySecurity').keyVaultSection.keyVaultName]",
-        "keyVaultSecretName": "[steps('identitySecurity').keyVaultSection.keyVaultSecretName]",
-        "keyVaultSku": "[steps('identitySecurity').keyVaultSection.keyVaultSku]",
+        "userAssignedIdentityResourceId": "[if(equals(steps('identitySecurity').managedIdentityType, 'UserAssigned'), steps('identitySecurity').uamiSelector.id, '')]",
+        "userAssignedPrincipalId": "[if(equals(steps('identitySecurity').managedIdentityType, 'UserAssigned'), steps('identitySecurity').uamiDetailsApi.properties.principalId, '')]",
+        "userAssignedClientId": "[if(equals(steps('identitySecurity').managedIdentityType, 'UserAssigned'), steps('identitySecurity').uamiDetailsApi.properties.clientId, '')]",
+        "keyVaultOption": "[steps('identitySecurity').keyVaultOption]",
+        "keyVaultName": "[if(equals(steps('identitySecurity').keyVaultOption, 'existing'), steps('identitySecurity').existingKeyVaultSelector.name, steps('identitySecurity').newKeyVaultName)]",
+        "keyVaultSecretName": "[steps('identitySecurity').keyVaultSecretName]",
+        "keyVaultSku": "[steps('identitySecurity').keyVaultSku]",
 
         "ingestEventsPage": "[steps('eventStreams').ingestEventsPage]",
         "ingestEventsApplication": "[steps('eventStreams').ingestEventsApplication]",
