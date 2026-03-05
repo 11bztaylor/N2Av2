@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.41.2.15936",
-      "templateHash": "2830533782276889541"
+      "templateHash": "12309267341856359414"
     }
   },
   "parameters": {
@@ -149,7 +149,7 @@
       "type": "string",
       "defaultValue": "NetskopeADX",
       "metadata": {
-        "description": "Base iterator index name. Per-stream suffix appended automatically. WARNING: Changing after initial deployment may cause data gaps or duplicates."
+        "description": "Iterator index name shared across all endpoints. Netskope scopes the cursor per endpoint type automatically. WARNING: Changing after initial deployment may cause data gaps or duplicates."
       }
     },
     "logLevel": {
@@ -410,6 +410,9 @@
   },
   "variables": {
     "hostingPlanName": "[format('{0}-plan', parameters('functionAppName'))]",
+    "resourceTags": {
+      "Purpose": "Netskope-Log-Segregation"
+    },
     "isUserAssigned": "[equals(parameters('managedIdentityType'), 'UserAssigned')]",
     "identityBlock": "[if(variables('isUserAssigned'), createObject('type', 'UserAssigned', 'userAssignedIdentities', createObject(format('{0}', parameters('userAssignedIdentityResourceId')), createObject())), createObject('type', 'SystemAssigned'))]",
     "kvSecretUri": "[format('https://{0}{1}/secrets/{2}/', parameters('keyVaultName'), environment().suffixes.keyvaultDns, parameters('keyVaultSecretName'))]",
@@ -422,6 +425,7 @@
       "apiVersion": "2024-01-01",
       "name": "[parameters('storageAccountName')]",
       "location": "[parameters('location')]",
+      "tags": "[variables('resourceTags')]",
       "sku": {
         "name": "Standard_LRS"
       },
@@ -437,6 +441,7 @@
       "apiVersion": "2020-02-02",
       "name": "[parameters('appInsightsName')]",
       "location": "[parameters('location')]",
+      "tags": "[variables('resourceTags')]",
       "kind": "web",
       "properties": {
         "Application_Type": "web",
@@ -448,6 +453,7 @@
       "apiVersion": "2024-04-01",
       "name": "[variables('hostingPlanName')]",
       "location": "[parameters('location')]",
+      "tags": "[variables('resourceTags')]",
       "kind": "linux",
       "sku": {
         "name": "Y1",
@@ -462,6 +468,7 @@
       "apiVersion": "2024-04-01",
       "name": "[parameters('functionAppName')]",
       "location": "[parameters('location')]",
+      "tags": "[variables('resourceTags')]",
       "kind": "functionapp,linux",
       "identity": "[variables('identityBlock')]",
       "properties": {
@@ -620,6 +627,7 @@
       "apiVersion": "2023-07-01",
       "name": "[parameters('keyVaultName')]",
       "location": "[parameters('location')]",
+      "tags": "[variables('resourceTags')]",
       "properties": {
         "tenantId": "[subscription().tenantId]",
         "sku": {

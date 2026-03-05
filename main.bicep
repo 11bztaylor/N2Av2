@@ -106,7 +106,7 @@ param netskopeHostname string
 @description('Netskope REST API v2 token. Required when keyVaultOption is "none" or "create". Not used when "existing" (token already in Key Vault).')
 param netskopeApiToken string
 
-@description('Base iterator index name. Per-stream suffix appended automatically. WARNING: Changing after initial deployment may cause data gaps or duplicates.')
+@description('Iterator index name shared across all endpoints. Netskope scopes the cursor per endpoint type automatically. WARNING: Changing after initial deployment may cause data gaps or duplicates.')
 param netskopeIndex string = 'NetskopeADX'
 
 // ─── Logging & Monitoring ───────────────────────────────────────────────────
@@ -224,6 +224,9 @@ param ingestAlertsContent string = 'No'
 // ═══════════════════════════════════════════════════════════════════════════════
 
 var hostingPlanName = '${functionAppName}-plan'
+var resourceTags = {
+  Purpose: 'Netskope-Log-Segregation'
+}
 var isUserAssigned = managedIdentityType == 'UserAssigned'
 
 var identityBlock = isUserAssigned
@@ -260,6 +263,7 @@ var kvSecretsUserRoleId = '4633458b-17de-408a-b874-0445c86b69e6'
 resource storageAccount 'Microsoft.Storage/storageAccounts@2024-01-01' = {
   name: storageAccountName
   location: location
+  tags: resourceTags
   sku: { name: 'Standard_LRS' }
   kind: 'StorageV2'
   properties: {
@@ -274,6 +278,7 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2024-01-01' = {
 resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
   name: appInsightsName
   location: location
+  tags: resourceTags
   kind: 'web'
   properties: {
     Application_Type: 'web'
@@ -288,6 +293,7 @@ resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
 resource hostingPlan 'Microsoft.Web/serverfarms@2024-04-01' = {
   name: hostingPlanName
   location: location
+  tags: resourceTags
   kind: 'linux'
   sku: {
     name: 'Y1'
@@ -303,6 +309,7 @@ resource hostingPlan 'Microsoft.Web/serverfarms@2024-04-01' = {
 resource functionApp 'Microsoft.Web/sites@2024-04-01' = {
   name: functionAppName
   location: location
+  tags: resourceTags
   kind: 'functionapp,linux'
   identity: identityBlock
   properties: {
@@ -472,6 +479,7 @@ resource functionApp 'Microsoft.Web/sites@2024-04-01' = {
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = if (keyVaultOption == 'create') {
   name: keyVaultName
   location: location
+  tags: resourceTags
   properties: {
     tenantId: subscription().tenantId
     sku: {
