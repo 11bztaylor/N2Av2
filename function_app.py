@@ -154,6 +154,7 @@ def netskope_ingest(timer: func.TimerRequest) -> None:
     )
 
     total = 0
+    ns.ensure_iterator()
 
     try:
         for category, stream_type, toggle in STREAMS:

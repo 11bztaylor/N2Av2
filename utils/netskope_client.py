@@ -95,7 +95,7 @@ class NetskopeClient:
         self.token = token
         self.base_index = base_index
         self._session = _build_session()
-        self._ensured_iterators: Set[str] = set()
+        self._iterator_ensured = False
 
     # ------------------------------------------------------------------
     # Public API
@@ -139,22 +139,21 @@ class NetskopeClient:
     # Iterator lifecycle
     # ------------------------------------------------------------------
 
-    def _ensure_iterator(self, index_name: str) -> None:
+    def ensure_iterator(self) -> None:
         """
         Ensure the iterator exists on the Netskope side.
 
         Some tenants require explicit creation via:
           POST /api/v2/events/dataexport/iterator/{name}
 
-        We call this once per index_name per client lifetime and cache
-        the result. If creation returns 409 (already exists), that's fine.
-        If the tenant auto-creates on first 'next' call, this is a harmless
-        no-op that returns quickly.
+        Called once before polling begins. If creation returns 409
+        (already exists), that's fine. If the tenant auto-creates on
+        first 'next' call, this is a harmless no-op.
         """
-        if index_name in self._ensured_iterators:
+        if self._iterator_ensured:
             return
 
-        url = f"{self.base_url}{self.ITERATOR_PATH}/{index_name}"
+        url = f"{self.base_url}{self.ITERATOR_PATH}/{self.base_index}"
         headers = {
             "Netskope-Api-Token": self.token,
             "Accept": "application/json",
@@ -166,36 +165,31 @@ class NetskopeClient:
             )
 
             if resp.status_code in (200, 201):
-                logger.info("Iterator created: %s", index_name)
+                logger.info("Iterator created: %s", self.base_index)
             elif resp.status_code == 409:
-                # Already exists — expected on subsequent runs
-                logger.debug("Iterator already exists: %s", index_name)
+                logger.debug("Iterator already exists: %s", self.base_index)
             elif resp.status_code == 400:
-                # Some tenants don't require explicit creation and return
-                # 400 on the creation endpoint. That's fine — the iterator
-                # is implicitly created on first 'next' call.
                 logger.debug(
                     "Iterator creation returned 400 for %s "
                     "(tenant may auto-create). Proceeding.",
-                    index_name,
+                    self.base_index,
                 )
             else:
                 logger.warning(
                     "Iterator creation unexpected status=%s for %s: %s",
                     resp.status_code,
-                    index_name,
+                    self.base_index,
                     resp.text[:300],
                 )
         except requests.RequestException as e:
             logger.warning(
                 "Iterator creation request failed for %s: %s "
                 "(will attempt polling anyway)",
-                index_name,
+                self.base_index,
                 e,
             )
 
-        # Cache regardless of outcome — don't retry every 5 min
-        self._ensured_iterators.add(index_name)
+        self._iterator_ensured = True
 
     # ------------------------------------------------------------------
     # Core polling
@@ -210,9 +204,6 @@ class NetskopeClient:
         GET {url}?operation=next&index={index_name}
         Header: Netskope-Api-Token: {token}
         """
-        # Ensure the iterator exists before first poll
-        self._ensure_iterator(index_name)
-
         headers = {
             "Netskope-Api-Token": self.token,
             "Accept": "application/json",
