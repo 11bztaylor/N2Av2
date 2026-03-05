@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.41.2.15936",
-      "templateHash": "12749610914513757054"
+      "templateHash": "18193686557134105836"
     }
   },
   "parameters": {
@@ -211,7 +211,7 @@
     },
     "ingestEventsInfrastructure": {
       "type": "string",
-      "defaultValue": "No",
+      "defaultValue": "Yes",
       "allowedValues": [
         "Yes",
         "No"
@@ -222,7 +222,7 @@
     },
     "ingestEventsNetwork": {
       "type": "string",
-      "defaultValue": "No",
+      "defaultValue": "Yes",
       "allowedValues": [
         "Yes",
         "No"
@@ -233,7 +233,7 @@
     },
     "ingestEventsConnection": {
       "type": "string",
-      "defaultValue": "No",
+      "defaultValue": "Yes",
       "allowedValues": [
         "Yes",
         "No"
@@ -244,7 +244,7 @@
     },
     "ingestEventsEndpoint": {
       "type": "string",
-      "defaultValue": "No",
+      "defaultValue": "Yes",
       "allowedValues": [
         "Yes",
         "No"
@@ -255,7 +255,7 @@
     },
     "ingestEventsIncident": {
       "type": "string",
-      "defaultValue": "No",
+      "defaultValue": "Yes",
       "allowedValues": [
         "Yes",
         "No"
@@ -266,7 +266,7 @@
     },
     "ingestAlertsRemediation": {
       "type": "string",
-      "defaultValue": "No",
+      "defaultValue": "Yes",
       "allowedValues": [
         "Yes",
         "No"
@@ -277,7 +277,7 @@
     },
     "ingestAlertsCompromisedCredential": {
       "type": "string",
-      "defaultValue": "No",
+      "defaultValue": "Yes",
       "allowedValues": [
         "Yes",
         "No"
@@ -288,7 +288,7 @@
     },
     "ingestAlertsUba": {
       "type": "string",
-      "defaultValue": "No",
+      "defaultValue": "Yes",
       "allowedValues": [
         "Yes",
         "No"
@@ -299,7 +299,7 @@
     },
     "ingestAlertsSecurityAssessment": {
       "type": "string",
-      "defaultValue": "No",
+      "defaultValue": "Yes",
       "allowedValues": [
         "Yes",
         "No"
@@ -310,7 +310,7 @@
     },
     "ingestAlertsQuarantine": {
       "type": "string",
-      "defaultValue": "No",
+      "defaultValue": "Yes",
       "allowedValues": [
         "Yes",
         "No"
@@ -365,7 +365,7 @@
     },
     "ingestAlertsCtep": {
       "type": "string",
-      "defaultValue": "No",
+      "defaultValue": "Yes",
       "allowedValues": [
         "Yes",
         "No"
@@ -376,7 +376,7 @@
     },
     "ingestAlertsWatchlist": {
       "type": "string",
-      "defaultValue": "No",
+      "defaultValue": "Yes",
       "allowedValues": [
         "Yes",
         "No"
@@ -387,7 +387,7 @@
     },
     "ingestAlertsDevice": {
       "type": "string",
-      "defaultValue": "No",
+      "defaultValue": "Yes",
       "allowedValues": [
         "Yes",
         "No"
@@ -398,7 +398,7 @@
     },
     "ingestAlertsContent": {
       "type": "string",
-      "defaultValue": "No",
+      "defaultValue": "Yes",
       "allowedValues": [
         "Yes",
         "No"

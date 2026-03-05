@@ -145,23 +145,23 @@ param ingestEventsAudit string = 'Yes'
 
 @description('Infrastructure events (CASB/SWG platform logs). Enable for platform-level diagnostics.')
 @allowed([ 'Yes', 'No' ])
-param ingestEventsInfrastructure string = 'No'
+param ingestEventsInfrastructure string = 'Yes'
 
 @description('Network events (firewall, IPS). Enable if using Netskope Intelligent SSE.')
 @allowed([ 'Yes', 'No' ])
-param ingestEventsNetwork string = 'No'
+param ingestEventsNetwork string = 'Yes'
 
 @description('Connection events (tunnel, ZTNA). Enable for zero-trust network access monitoring.')
 @allowed([ 'Yes', 'No' ])
-param ingestEventsConnection string = 'No'
+param ingestEventsConnection string = 'Yes'
 
 @description('Endpoint events (NPA client, device posture). Enable if using Netskope Private Access.')
 @allowed([ 'Yes', 'No' ])
-param ingestEventsEndpoint string = 'No'
+param ingestEventsEndpoint string = 'Yes'
 
 @description('Incident events. Enable for security incident correlation. May not be available on all Netskope licenses.')
 @allowed([ 'Yes', 'No' ])
-param ingestEventsIncident string = 'No'
+param ingestEventsIncident string = 'Yes'
 
 // ─── Alert Subtype Toggles ──────────────────────────────────────────────────
 // Each alert subtype has its own Netskope API endpoint and ADX iterator.
@@ -169,23 +169,23 @@ param ingestEventsIncident string = 'No'
 
 @description('Remediation action alerts (quarantine, block, coach). Low volume.')
 @allowed([ 'Yes', 'No' ])
-param ingestAlertsRemediation string = 'No'
+param ingestAlertsRemediation string = 'Yes'
 
 @description('Compromised credential alerts. RECOMMENDED for identity security. Requires threat protection license.')
 @allowed([ 'Yes', 'No' ])
-param ingestAlertsCompromisedCredential string = 'No'
+param ingestAlertsCompromisedCredential string = 'Yes'
 
 @description('User Behavior Analytics (UBA) alerts. Enable for insider threat detection.')
 @allowed([ 'Yes', 'No' ])
-param ingestAlertsUba string = 'No'
+param ingestAlertsUba string = 'Yes'
 
 @description('Security posture assessment alerts. Enable for CSPM use cases.')
 @allowed([ 'Yes', 'No' ])
-param ingestAlertsSecurityAssessment string = 'No'
+param ingestAlertsSecurityAssessment string = 'Yes'
 
 @description('Quarantine action alerts. Enable to track file quarantine events.')
 @allowed([ 'Yes', 'No' ])
-param ingestAlertsQuarantine string = 'No'
+param ingestAlertsQuarantine string = 'Yes'
 
 @description('Real-time policy violation alerts. RECOMMENDED — core security alerting stream.')
 @allowed([ 'Yes', 'No' ])
@@ -205,19 +205,19 @@ param ingestAlertsDlp string = 'Yes'
 
 @description('Client Traffic Exploit Prevention (CTEP) alerts. Enable if using advanced threat protection.')
 @allowed([ 'Yes', 'No' ])
-param ingestAlertsCtep string = 'No'
+param ingestAlertsCtep string = 'Yes'
 
 @description('Watchlist alerts. Enable to track activity from monitored users/entities.')
 @allowed([ 'Yes', 'No' ])
-param ingestAlertsWatchlist string = 'No'
+param ingestAlertsWatchlist string = 'Yes'
 
 @description('Device classification alerts. Enable for endpoint compliance. May not be available on all licenses.')
 @allowed([ 'Yes', 'No' ])
-param ingestAlertsDevice string = 'No'
+param ingestAlertsDevice string = 'Yes'
 
 @description('Content classification alerts (file/object). Enable for data-centric security. May not be available on all licenses.')
 @allowed([ 'Yes', 'No' ])
-param ingestAlertsContent string = 'No'
+param ingestAlertsContent string = 'Yes'
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Variables
