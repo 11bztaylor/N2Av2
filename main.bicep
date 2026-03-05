@@ -518,19 +518,57 @@ resource kvRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' =
 // ═══════════════════════════════════════════════════════════════════════════════
 
 var functionPrincipalId = isUserAssigned ? userAssignedPrincipalId : functionApp.identity.principalId
+var kvUri = keyVaultOption == 'create' ? keyVault!.properties.vaultUri : (keyVaultOption == 'existing' ? 'https://${keyVaultName}${environment().suffixes.keyvaultDns}/' : 'N/A')
 
+var kvAccessNote = keyVaultOption == 'existing'
+  ? 'az role assignment create --role "Key Vault Secrets User" --assignee ${functionPrincipalId} --scope ${resourceId('Microsoft.KeyVault/vaults', keyVaultName)}'
+  : keyVaultOption == 'create'
+    ? 'Automatically configured.'
+    : 'N/A - Key Vault not in use.'
+
+var adxGrantCmd = '.add database ${adxDatabaseName} ingestors (\'aadapp=${functionPrincipalId}\')'
+var deployCmd = 'func azure functionapp publish ${functionApp.name}'
+
+@description('Copy-paste deployment summary for documentation.')
+output deploymentSummary string = join([
+  '=== NetskopetoADX Deployment Summary ==='
+  ''
+  '--- Resources Deployed ---'
+  'Function App:      ${functionApp.name}'
+  'Hostname:          ${functionApp.properties.defaultHostName}'
+  'Principal ID:      ${functionPrincipalId}'
+  'Storage Account:   ${storageAccountName}'
+  'App Insights:      ${appInsightsName}'
+  'App Service Plan:  ${hostingPlanName}'
+  'Key Vault:         ${kvUri}'
+  'Tag:               Purpose = Netskope-Log-Segregation'
+  ''
+  '--- Configuration ---'
+  'ADX Cluster:       ${adxClusterUri}'
+  'ADX Database:      ${adxDatabaseName}'
+  'Netskope Tenant:   ${netskopeHostname}'
+  'Iterator Index:    ${netskopeIndex}'
+  'Python Version:    ${pythonVersion}'
+  'Identity Type:     ${managedIdentityType}'
+  ''
+  '--- REQUIRED: Grant ADX Ingestor Role ---'
+  'Run this in Kusto Web Explorer (https://dataexplorer.azure.com):'
+  adxGrantCmd
+  ''
+  '--- REQUIRED: Deploy Function Code ---'
+  deployCmd
+  ''
+  '--- Key Vault Access ---'
+  kvAccessNote
+  ''
+  '--- Cleanup ---'
+  'To remove all resources, filter by tag Purpose = Netskope-Log-Segregation'
+  'in your Resource Group and delete.'
+], '\n')
+
+// Individual outputs kept for programmatic use
 output functionAppName string = functionApp.name
 output functionAppHostname string = functionApp.properties.defaultHostName
 output functionAppPrincipalId string = functionPrincipalId
-
-@description('Run this KQL command in your ADX cluster to grant the Function App ingest permissions.')
-output grantAdxIngestorRole string = '.add database ${adxDatabaseName} ingestors (\'aadapp=${functionPrincipalId}\')'
-
-output keyVaultUri string = keyVaultOption == 'create' ? keyVault!.properties.vaultUri : ''
-
-@description('When using an existing Key Vault, run this command to grant the Function App secret read access.')
-output grantKeyVaultAccess string = keyVaultOption == 'existing'
-  ? 'az role assignment create --role "Key Vault Secrets User" --assignee ${functionPrincipalId} --scope ${resourceId('Microsoft.KeyVault/vaults', keyVaultName)}'
-  : keyVaultOption == 'create'
-    ? 'Automatically configured via RBAC role assignment.'
-    : 'Not applicable - Key Vault not in use.'
+output grantAdxIngestorRole string = adxGrantCmd
+output keyVaultUri string = kvUri

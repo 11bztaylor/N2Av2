@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.41.2.15936",
-      "templateHash": "12309267341856359414"
+      "templateHash": "12749610914513757054"
     }
   },
   "parameters": {
@@ -417,7 +417,8 @@
     "identityBlock": "[if(variables('isUserAssigned'), createObject('type', 'UserAssigned', 'userAssignedIdentities', createObject(format('{0}', parameters('userAssignedIdentityResourceId')), createObject())), createObject('type', 'SystemAssigned'))]",
     "kvSecretUri": "[format('https://{0}{1}/secrets/{2}/', parameters('keyVaultName'), environment().suffixes.keyvaultDns, parameters('keyVaultSecretName'))]",
     "netskopeTokenSetting": "[if(not(equals(parameters('keyVaultOption'), 'none')), format('@Microsoft.KeyVault(SecretUri={0})', variables('kvSecretUri')), parameters('netskopeApiToken'))]",
-    "kvSecretsUserRoleId": "4633458b-17de-408a-b874-0445c86b69e6"
+    "kvSecretsUserRoleId": "4633458b-17de-408a-b874-0445c86b69e6",
+    "deployCmd": "[format('func azure functionapp publish {0}', parameters('functionAppName'))]"
   },
   "resources": [
     {
@@ -671,6 +672,13 @@
     }
   ],
   "outputs": {
+    "deploymentSummary": {
+      "type": "string",
+      "metadata": {
+        "description": "Copy-paste deployment summary for documentation."
+      },
+      "value": "[join(createArray('=== NetskopetoADX Deployment Summary ===', '', '--- Resources Deployed ---', format('Function App:      {0}', parameters('functionAppName')), format('Hostname:          {0}', reference(resourceId('Microsoft.Web/sites', parameters('functionAppName')), '2024-04-01').defaultHostName), format('Principal ID:      {0}', if(variables('isUserAssigned'), parameters('userAssignedPrincipalId'), reference(resourceId('Microsoft.Web/sites', parameters('functionAppName')), '2024-04-01', 'full').identity.principalId)), format('Storage Account:   {0}', parameters('storageAccountName')), format('App Insights:      {0}', parameters('appInsightsName')), format('App Service Plan:  {0}', variables('hostingPlanName')), format('Key Vault:         {0}', if(equals(parameters('keyVaultOption'), 'create'), reference(resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName')), '2023-07-01').vaultUri, if(equals(parameters('keyVaultOption'), 'existing'), format('https://{0}{1}/', parameters('keyVaultName'), environment().suffixes.keyvaultDns), 'N/A'))), 'Tag:               Purpose = Netskope-Log-Segregation', '', '--- Configuration ---', format('ADX Cluster:       {0}', parameters('adxClusterUri')), format('ADX Database:      {0}', parameters('adxDatabaseName')), format('Netskope Tenant:   {0}', parameters('netskopeHostname')), format('Iterator Index:    {0}', parameters('netskopeIndex')), format('Python Version:    {0}', parameters('pythonVersion')), format('Identity Type:     {0}', parameters('managedIdentityType')), '', '--- REQUIRED: Grant ADX Ingestor Role ---', 'Run this in Kusto Web Explorer (https://dataexplorer.azure.com):', format('.add database {0} ingestors (''aadapp={1}'')', parameters('adxDatabaseName'), if(variables('isUserAssigned'), parameters('userAssignedPrincipalId'), reference(resourceId('Microsoft.Web/sites', parameters('functionAppName')), '2024-04-01', 'full').identity.principalId)), '', '--- REQUIRED: Deploy Function Code ---', variables('deployCmd'), '', '--- Key Vault Access ---', if(equals(parameters('keyVaultOption'), 'existing'), format('az role assignment create --role \"Key Vault Secrets User\" --assignee {0} --scope {1}', if(variables('isUserAssigned'), parameters('userAssignedPrincipalId'), reference(resourceId('Microsoft.Web/sites', parameters('functionAppName')), '2024-04-01', 'full').identity.principalId), resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))), if(equals(parameters('keyVaultOption'), 'create'), 'Automatically configured.', 'N/A - Key Vault not in use.')), '', '--- Cleanup ---', 'To remove all resources, filter by tag Purpose = Netskope-Log-Segregation', 'in your Resource Group and delete.'), '\n')]"
+    },
     "functionAppName": {
       "type": "string",
       "value": "[parameters('functionAppName')]"
@@ -685,21 +693,11 @@
     },
     "grantAdxIngestorRole": {
       "type": "string",
-      "metadata": {
-        "description": "Run this KQL command in your ADX cluster to grant the Function App ingest permissions."
-      },
       "value": "[format('.add database {0} ingestors (''aadapp={1}'')', parameters('adxDatabaseName'), if(variables('isUserAssigned'), parameters('userAssignedPrincipalId'), reference(resourceId('Microsoft.Web/sites', parameters('functionAppName')), '2024-04-01', 'full').identity.principalId))]"
     },
     "keyVaultUri": {
       "type": "string",
-      "value": "[if(equals(parameters('keyVaultOption'), 'create'), reference(resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName')), '2023-07-01').vaultUri, '')]"
-    },
-    "grantKeyVaultAccess": {
-      "type": "string",
-      "metadata": {
-        "description": "When using an existing Key Vault, run this command to grant the Function App secret read access."
-      },
-      "value": "[if(equals(parameters('keyVaultOption'), 'existing'), format('az role assignment create --role \"Key Vault Secrets User\" --assignee {0} --scope {1}', if(variables('isUserAssigned'), parameters('userAssignedPrincipalId'), reference(resourceId('Microsoft.Web/sites', parameters('functionAppName')), '2024-04-01', 'full').identity.principalId), resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))), if(equals(parameters('keyVaultOption'), 'create'), 'Automatically configured via RBAC role assignment.', 'Not applicable - Key Vault not in use.'))]"
+      "value": "[if(equals(parameters('keyVaultOption'), 'create'), reference(resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName')), '2023-07-01').vaultUri, if(equals(parameters('keyVaultOption'), 'existing'), format('https://{0}{1}/', parameters('keyVaultName'), environment().suffixes.keyvaultDns), 'N/A'))]"
     }
   }
 }
