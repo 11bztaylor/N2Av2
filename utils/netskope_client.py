@@ -87,9 +87,9 @@ class NetskopeClient:
         Args:
             hostname:    Netskope tenant hostname (e.g. mytenant.goskope.com).
             token:       REST API v2 token.
-            base_index:  Base iterator name (e.g. "NetskopeADX").
-                         Per-stream index becomes "{base_index}_{category}_{type}"
-                         so each stream maintains independent progress.
+            base_index:  Iterator index name (e.g. "NetskopeADX").
+                         Shared across all endpoints — Netskope scopes the
+                         cursor per endpoint type automatically.
         """
         self.base_url = f"https://{hostname}"
         self.token = token
@@ -120,7 +120,7 @@ class NetskopeClient:
             )
 
         url = f"{self.base_url}{paths[category]}/{stream_type}"
-        index_name = f"{self.base_index}_{category}_{stream_type}"
+        index_name = self.base_index
         yield from self._poll_iterator(url, index_name, f"{category}/{stream_type}")
 
     def pull_events(self, event_type: str) -> Iterator[List[Dict[str, Any]]]:
