@@ -68,7 +68,6 @@ class NetskopeClient:
 
     EVENTS_PATH = "/api/v2/events/dataexport/events"
     ALERTS_PATH = "/api/v2/events/dataexport/alerts"
-    ITERATOR_PATH = "/api/v2/events/dataexport/iterator"
 
     VALID_EVENT_TYPES = frozenset([
         "page", "application", "audit", "infrastructure",
@@ -95,7 +94,6 @@ class NetskopeClient:
         self.token = token
         self.base_index = base_index
         self._session = _build_session()
-        self._iterator_ensured = False
 
     # ------------------------------------------------------------------
     # Public API
@@ -134,62 +132,6 @@ class NetskopeClient:
     def close(self) -> None:
         """Close the underlying HTTP session."""
         self._session.close()
-
-    # ------------------------------------------------------------------
-    # Iterator lifecycle
-    # ------------------------------------------------------------------
-
-    def ensure_iterator(self) -> None:
-        """
-        Ensure the iterator exists on the Netskope side.
-
-        Some tenants require explicit creation via:
-          POST /api/v2/events/dataexport/iterator/{name}
-
-        Called once before polling begins. If creation returns 409
-        (already exists), that's fine. If the tenant auto-creates on
-        first 'next' call, this is a harmless no-op.
-        """
-        if self._iterator_ensured:
-            return
-
-        url = f"{self.base_url}{self.ITERATOR_PATH}/{self.base_index}"
-        headers = {
-            "Netskope-Api-Token": self.token,
-            "Accept": "application/json",
-        }
-
-        try:
-            resp = self._session.post(
-                url, headers=headers, timeout=REQUEST_TIMEOUT_SECS
-            )
-
-            if resp.status_code in (200, 201):
-                logger.info("Iterator created: %s", self.base_index)
-            elif resp.status_code == 409:
-                logger.debug("Iterator already exists: %s", self.base_index)
-            elif resp.status_code == 400:
-                logger.debug(
-                    "Iterator creation returned 400 for %s "
-                    "(tenant may auto-create). Proceeding.",
-                    self.base_index,
-                )
-            else:
-                logger.warning(
-                    "Iterator creation unexpected status=%s for %s: %s",
-                    resp.status_code,
-                    self.base_index,
-                    resp.text[:300],
-                )
-        except requests.RequestException as e:
-            logger.warning(
-                "Iterator creation request failed for %s: %s "
-                "(will attempt polling anyway)",
-                self.base_index,
-                e,
-            )
-
-        self._iterator_ensured = True
 
     # ------------------------------------------------------------------
     # Core polling
