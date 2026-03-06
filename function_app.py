@@ -140,14 +140,6 @@ def netskope_ingest(timer: func.TimerRequest) -> None:
     adx_db   = os.environ["ADX_DATABASE"]
     mi_client_id = os.environ.get("MANAGED_IDENTITY_CLIENT_ID", "").strip() or None
 
-    # DEBUG: Log exact config values (mask sensitive parts)
-    logger.warning(
-        "DEBUG CONFIG: hostname=%s index=%s adx_uri=%s adx_db=%s "
-        "mi_client_id=%s token_length=%d",
-        hostname, index, adx_uri, adx_db,
-        mi_client_id or "(system-assigned)", len(token),
-    )
-
     ns  = NetskopeClient(hostname, token, index)
     adx = AdxClient(adx_uri, adx_db, managed_identity_client_id=mi_client_id)
 
@@ -155,7 +147,7 @@ def netskope_ingest(timer: func.TimerRequest) -> None:
     enabled = [
         f"{cat}/{stype}" for cat, stype, toggle in STREAMS if _is_enabled(toggle)
     ]
-    logger.warning(
+    logger.info(
         "Starting ingestion run. Enabled streams (%d): %s",
         len(enabled),
         ", ".join(enabled) or "(none)",
