@@ -198,14 +198,22 @@ class NetskopeClient:
                 break
 
             result = body.get("result", "wait")
-            data: List[Dict[str, Any]] = body.get("data", [])
             wait_time = body.get("wait_time", 0)
+
+            # Netskope v2 returns data in "data" OR in "result" (as a list).
+            # Handle both formats.
+            if isinstance(result, list):
+                data: List[Dict[str, Any]] = result
+                result_status = "ok" if data else "wait"
+            else:
+                data = body.get("data", [])
+                result_status = result
 
             # DEBUG: Log the full response summary for visibility
             logger.warning(
-                "DEBUG Netskope response: stream=%s status=%d result=%s "
+                "DEBUG Netskope response: stream=%s status=%d result_status=%s "
                 "data_count=%d wait_time=%s ok=%s",
-                stream_label, resp.status_code, result,
+                stream_label, resp.status_code, result_status,
                 len(data), wait_time, body.get("ok"),
             )
 
@@ -220,7 +228,7 @@ class NetskopeClient:
                 pages += 1
 
             # "wait" or empty data = caught up for this cycle.
-            if result == "wait" or not data:
+            if result_status == "wait" or not data:
                 if wait_time and wait_time > 0:
                     logger.debug(
                         "stream=%s server says wait_time=%ds "
