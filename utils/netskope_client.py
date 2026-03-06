@@ -18,7 +18,8 @@ Iterator lifecycle:
   auto-detects "iterator not found" responses and attempts creation.
 
 Response shape:
-  { "ok": 1, "result": "ok"|"wait", "data": [...], "wait_time": <seconds> }
+  { "ok": 1, "result": [<events>]|"wait", "wait_time": <seconds> }
+  Note: data is in "result" as a list (not in a separate "data" field).
 """
 
 import json
@@ -194,6 +195,14 @@ class NetskopeClient:
                     "Netskope returned non-JSON [stream=%s]: %s",
                     stream_label,
                     resp.text[:500],
+                )
+                break
+
+            # Reject API-level errors (ok != 1)
+            if not body.get("ok"):
+                logger.error(
+                    "Netskope API error [stream=%s]: ok=%s body=%s",
+                    stream_label, body.get("ok"), str(body)[:500],
                 )
                 break
 
